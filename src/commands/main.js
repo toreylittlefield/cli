@@ -161,7 +161,7 @@ const mainCommand = async function (options, command) {
  * @returns {import('./base-command').BaseCommand}
  */
 const createMainCommand = () => {
-  const program = new BaseCommand('netlify')
+  const program = new BaseCommand('customized-netlify')
   // register all the commands
   createAddonsCommand(program)
   createApiCommand(program)
