@@ -1,12 +1,12 @@
 {
-  "name": "netlify-cli",
-  "version": "9.12.5",
+  "name": "customized-netlify-cli",
+  "version": "9.12.9",
   "lockfileVersion": 2,
   "requires": true,
   "packages": {
     "": {
-      "name": "netlify-cli",
-      "version": "9.12.5",
+      "name": "customized-netlify-cli",
+      "version": "9.12.9",
       "hasInstallScript": true,
       "license": "MIT",
       "dependencies": {
@@ -120,8 +120,8 @@
         "write-file-atomic": "^4.0.0"
       },
       "bin": {
-        "netlify": "bin/run",
-        "ntl": "bin/run"
+        "customized-netlify": "bin/run",
+        "customized-ntl": "bin/run"
       },
       "devDependencies": {
         "@babel/preset-react": "^7.12.13",
