@@ -1,4 +1,5 @@
 // @ts-check
+// const e = require('express')
 const jwtDecode = require('jwt-decode')
 
 const {
@@ -17,6 +18,27 @@ const { FunctionsRegistry } = require('./registry')
 const { handleScheduledFunction } = require('./scheduled')
 const { handleSynchronousFunction } = require('./synchronous')
 const { shouldBase64Encode } = require('./utils')
+
+const buildCustomClientContext = function (headers, customClientContext) {
+  // inject a client context based on auth header, ported over from netlify-lambda (https://github.com/netlify/netlify-lambda/pull/57)
+  // inject a client context based on auth header, ported over from netlify-lambda (https://github.com/netlify/netlify-lambda/pull/57)
+  if (!headers.authorization) return
+
+  const parts = headers.authorization.split(' ')
+  if (parts.length !== 2 || parts[0] !== 'Bearer') return
+
+  if (customClientContext) {
+    try {
+      return {
+        ...customClientContext,
+        // @ts-ignore
+        user: jwtDecode(parts[1]),
+      }
+    } catch (error) {
+      console.error(error)
+    }
+  }
+}
 
 const buildClientContext = function (headers) {
   // inject a client context based on auth header, ported over from netlify-lambda (https://github.com/netlify/netlify-lambda/pull/57)
@@ -38,6 +60,7 @@ const buildClientContext = function (headers) {
         //   "testData": "NETLIFY_DEV_LOCALLY_EMULATED_IDENTITY"
         // }
       },
+      // @ts-ignore
       user: jwtDecode(parts[1]),
     }
   } catch {
@@ -64,6 +87,15 @@ const createHandler = function (options) {
       response.statusCode = 400
       response.end('Function name should consist only of alphanumeric characters, hyphen & underscores.')
       return
+    }
+
+    const isAuthenticated = Boolean(options.settings.identity)
+    if (isAuthenticated) {
+      const token = options.settings.identity
+      console.log('token --identity flag')
+      request.headers.authorization = token?.access_token
+        ? `Bearer ${token.access_token}`
+        : 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzb3VyY2UiOiJuZXRsaWZ5IGZ1bmN0aW9uczp0cmlnZ2VyIiwidGVzdERhdGEiOiJORVRMSUZZX0RFVl9MT0NBTExZX0VNVUxBVEVEX0pXVCJ9.Xb6vOFrfLUZmyUkXBbCvU4bM7q8tPilF0F03Wupap_c'
     }
 
     const isBase64Encoded = shouldBase64Encode(request.headers['content-type'])
@@ -115,7 +147,7 @@ const createHandler = function (options) {
       event.netlifyGraphToken = jwt
     }
 
-    const clientContext = buildClientContext(request.headers) || {}
+    let clientContext = buildClientContext(request.headers) || {}
 
     if (func.isBackground) {
       handleBackgroundFunction(functionName, response)
@@ -148,6 +180,10 @@ const createHandler = function (options) {
         response,
       })
     } else {
+      if (options.settings.injectedClientContext) {
+        console.log('custom client context --flag')
+        clientContext = buildCustomClientContext(request.headers, options.settings.injectedClientContext)
+      }
       const { error, result } = await func.invoke(event, clientContext)
 
       // check for existence of metadata if this is a builder function
@@ -170,6 +206,7 @@ const getFunctionsServer = function (options) {
   // performance optimization, load express on demand
   // eslint-disable-next-line node/global-require
   const express = require('express')
+  // @ts-ignore
   // eslint-disable-next-line node/global-require
   const expressLogging = require('express-logging')
   const app = express()
@@ -186,6 +223,7 @@ const getFunctionsServer = function (options) {
   app.use(express.raw({ limit: '6mb', type: '*/*' }))
   app.use(createFormSubmissionHandler({ functionsRegistry, siteUrl }))
   app.use(
+    // @ts-ignore
     expressLogging(console, {
       blacklist: ['/favicon.ico'],
     }),
