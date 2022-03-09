@@ -14,7 +14,7 @@ const { readFileAsyncCatchError } = require('../lib/fs')
 const { NETLIFYDEVWARN, chalk, log } = require('./command-helpers')
 const { acquirePort } = require('./dev')
 const { getInternalFunctionsDir } = require('./functions')
-const { processClientContextFromFlag } = require('./functions/inject-custom-context')
+const { processInputFromFlag } = require('./functions/inject-custom-context')
 
 const formatProperty = (str) => chalk.magenta(`'${str}'`)
 const formatValue = (str) => chalk.green(`'${str}'`)
@@ -342,8 +342,8 @@ const detectServerSettings = async (devConfig, options, projectDir) => {
   const functionsDir = devConfig.functions || settings.functions
   const internalFunctionsDir = await getInternalFunctionsDir({ base: projectDir })
   const shouldStartFunctionsServer = Boolean(functionsDir || internalFunctionsDir)
-  const injectedClientContext = processClientContextFromFlag(options.clientContext)
-  const identity = processClientContextFromFlag(options.identity)
+  const injectedClientContext = processInputFromFlag(options.clientContext)
+  const identity = processInputFromFlag(options.identity)
 
   return {
     ...settings,

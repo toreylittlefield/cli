@@ -4,7 +4,7 @@ const { join } = require('path')
 
 const { startFunctionsServer } = require('../../lib/functions/server')
 const { acquirePort, getFunctionsDir, getSiteInformation, injectEnvVariables } = require('../../utils')
-const { processClientContextFromFlag } = require('../../utils/functions/inject-custom-context')
+const { processInputFromFlag } = require('../../utils/functions/inject-custom-context')
 
 const DEFAULT_PORT = 9999
 
@@ -33,7 +33,7 @@ const functionsServe = async (options, command) => {
     errorMessage: 'Could not acquire configured functions port',
   })
 
-  const injectedClientContext = processClientContextFromFlag(options.clientContext)
+  const injectedClientContext = processInputFromFlag(options.clientContext)
 
   await startFunctionsServer({
     config,
