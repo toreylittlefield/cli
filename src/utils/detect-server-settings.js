@@ -3,6 +3,7 @@ const { EOL } = require('os')
 const path = require('path')
 const process = require('process')
 
+// @ts-ignore
 const frameworkInfoPromise = import('@netlify/framework-info')
 const fuzzy = require('fuzzy')
 const getPort = require('get-port')
@@ -13,6 +14,7 @@ const { readFileAsyncCatchError } = require('../lib/fs')
 const { NETLIFYDEVWARN, chalk, log } = require('./command-helpers')
 const { acquirePort } = require('./dev')
 const { getInternalFunctionsDir } = require('./functions')
+const { processClientContextFromFlag } = require('./functions/inject-custom-context')
 
 const formatProperty = (str) => chalk.magenta(`'${str}'`)
 const formatValue = (str) => chalk.green(`'${str}'`)
@@ -182,6 +184,7 @@ const getSettingsFromFramework = (framework) => {
 const hasDevCommand = (framework) => Array.isArray(framework.dev.commands) && framework.dev.commands.length !== 0
 
 const detectFrameworkSettings = async ({ projectDir }) => {
+  // @ts-ignore
   const { listFrameworks } = await frameworkInfoPromise
   const projectFrameworks = await listFrameworks({ projectDir })
   const frameworks = projectFrameworks.filter((framework) => hasDevCommand(framework))
@@ -202,6 +205,7 @@ const detectFrameworkSettings = async ({ projectDir }) => {
     const { chosenFramework } = await inquirer.prompt({
       name: 'chosenFramework',
       message: `Multiple possible start commands found`,
+      // @ts-ignore
       type: 'autocomplete',
       source(_, input) {
         if (!input || input === '') {
@@ -247,11 +251,17 @@ const handleCustomFramework = ({ devConfig }) => {
 
 const mergeSettings = async ({ devConfig, frameworkSettings = {} }) => {
   const {
+    // @ts-ignore
     command: frameworkCommand,
+    // @ts-ignore
     frameworkPort: frameworkDetectedPort,
+    // @ts-ignore
     dist,
+    // @ts-ignore
     framework,
+    // @ts-ignore
     env,
+    // @ts-ignore
     pollingStrategies = [],
   } = frameworkSettings
 
@@ -277,6 +287,7 @@ const mergeSettings = async ({ devConfig, frameworkSettings = {} }) => {
  */
 const handleForcedFramework = async ({ devConfig, projectDir }) => {
   // this throws if `devConfig.framework` is not a supported framework
+  // @ts-ignore
   const { getFramework } = await frameworkInfoPromise
   const frameworkSettings = getSettingsFromFramework(await getFramework(devConfig.framework, { projectDir }))
   return mergeSettings({ devConfig, frameworkSettings })
@@ -331,12 +342,19 @@ const detectServerSettings = async (devConfig, options, projectDir) => {
   const functionsDir = devConfig.functions || settings.functions
   const internalFunctionsDir = await getInternalFunctionsDir({ base: projectDir })
   const shouldStartFunctionsServer = Boolean(functionsDir || internalFunctionsDir)
+  const injectedClientContext = processClientContextFromFlag(options.clientContext)
+  const identity = processClientContextFromFlag(options.identity)
 
   return {
     ...settings,
+    injectedClientContext,
+    identity,
     port: acquiredPort,
+    // @ts-ignore
     jwtSecret: devConfig.jwtSecret || 'secret',
+    // @ts-ignore
     jwtRolePath: devConfig.jwtRolePath || 'app_metadata.authorization.roles',
+    // @ts-ignore
     functions: functionsDir,
     ...(shouldStartFunctionsServer && { functionsPort: await getPort({ port: devConfig.functionsPort || 0 }) }),
     ...(devConfig.https && { https: await readHttpsSettings(devConfig.https) }),
