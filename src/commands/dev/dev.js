@@ -7,7 +7,9 @@ const { promisify } = require('util')
 const boxen = require('boxen')
 const { Option } = require('commander')
 const execa = require('execa')
+// @ts-ignore
 const StaticServer = require('static-server')
+// @ts-ignore
 const stripAnsiCc = require('strip-ansi-control-characters')
 const waitPort = require('wait-port')
 
@@ -144,7 +146,9 @@ const runCommand = (command, env = {}) => {
         )
       } else {
         const errorMessage = result.failed
-          ? `${NETLIFYDEVERR} ${result.shortMessage}`
+          ? // eslint-ignore
+            // @ts-ignore
+            `${NETLIFYDEVERR} ${result.shortMessage}`
           : `${NETLIFYDEVWARN} "${command}" exited with code ${result.exitCode}`
 
         log(`${errorMessage}. Shutting down Netlify Dev server`)
@@ -426,11 +430,13 @@ const dev = async (options, command) => {
     const { configPath } = command.netlify.site
     if (configPath) {
       // chokidar handle
+      // @ts-ignore
       command.configWatcherHandle = await watchDebounced(configPath, {
         depth: 1,
         onChange: async () => {
           const cwd = options.cwd || process.cwd()
           const [token] = await getToken(options.auth)
+          // @ts-ignore
           const { config: newConfig } = await command.getConfig({ cwd, state, token, ...command.netlify.apiUrlOpts })
 
           const normalizedNewConfig = normalizeConfig(newConfig)
@@ -439,6 +445,7 @@ const dev = async (options, command) => {
       })
 
       processOnExit(async () => {
+        // @ts-ignore
         await command.configWatcherHandle.close()
       })
     }
@@ -488,6 +495,11 @@ const createDevCommand = (program) => {
     .option('-o ,--offline', 'disables any features that require network access')
     .option('-l, --live', 'start a public live session', false)
     .option('--functionsPort <port>', 'port of functions server', (value) => Number.parseInt(value))
+    .option('-cc, --clientContext <dir>', 'inject a custom clientContext with identity')
+    .option(
+      '--identity <dir>',
+      'simulate Netlify Identity authentication JWT. pass --identity to affirm unauthenticated request',
+    )
     .addOption(
       new Option('--staticServerPort <port>', 'port of the static app server used when no framework is detected')
         .argParser((value) => Number.parseInt(value))
