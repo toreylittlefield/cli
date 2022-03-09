@@ -4,6 +4,7 @@ const { join } = require('path')
 
 const { startFunctionsServer } = require('../../lib/functions/server')
 const { acquirePort, getFunctionsDir, getSiteInformation, injectEnvVariables } = require('../../utils')
+const { processClientContextFromFlag } = require('../../utils/functions/inject-custom-context')
 
 const DEFAULT_PORT = 9999
 
@@ -32,10 +33,12 @@ const functionsServe = async (options, command) => {
     errorMessage: 'Could not acquire configured functions port',
   })
 
+  const injectedClientContext = processClientContextFromFlag(options.clientContext)
+
   await startFunctionsServer({
     config,
     api,
-    settings: { functions: functionsDir, functionsPort },
+    settings: { functions: functionsDir, functionsPort, injectedClientContext },
     site,
     siteInfo,
     siteUrl,
@@ -59,6 +62,7 @@ const createFunctionsServeCommand = (program) =>
     .option('-f, --functions <dir>', 'Specify a functions directory to serve')
     .option('-p, --port <port>', 'Specify a port for the functions server', (value) => Number.parseInt(value))
     .option('-o, --offline', 'disables any features that require network access')
+    .option('-c, --clientContext <dir>', 'inject a custom clientContext with identity')
     .addHelpText('after', 'Helpful for debugging functions.')
     .action(functionsServe)
 
